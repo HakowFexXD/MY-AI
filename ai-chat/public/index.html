@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Chat</title>
+<style>
+:root{--bg:#000;--accent:#00d07a;--text:#fff}
+html,body{margin:0;height:100%;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--text)}
+.app{display:flex;height:100vh;width:100vw}
+.left{width:300px;background:linear-gradient(180deg,#001a00,#000);display:flex;justify-content:center;align-items:center;border-right:2px solid var(--accent);padding:20px;box-sizing:border-box}
+.left img{width:240px;height:auto;border-radius:6px;user-select:none}
+.right{flex:1;display:flex;flex-direction:column;background:#000}
+.header{height:64px;border-bottom:2px solid rgba(0,208,122,0.06);display:flex;align-items:center;padding:0 16px;box-sizing:border-box}
+.header .title{color:var(--accent);font-weight:700}
+.chat{flex:1;overflow:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.message{max-width:78%;padding:12px;border-radius:12px;line-height:1.45;word-break:break-word}
+.message.user{align-self:flex-end;background:#003319;border:1px solid rgba(0,208,122,0.18)}
+.message.ai{align-self:flex-start;background:rgba(0,208,122,0.06);border:1px solid rgba(0,208,122,0.12)}
+.input-wrap{height:80px;border-top:2px solid rgba(0,208,122,0.06);display:flex;gap:10px;align-items:center;padding:10px;box-sizing:border-box}
+textarea{flex:1;height:60px;border-radius:8px;padding:10px;background:#001a00;border:1px solid rgba(0,208,122,0.08);color:var(--text);resize:none}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="left"><img src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png" alt="Postać"></aside>
+<main class="right">
+<div class="header"><div class="title">Rozmowa</div></div>
+<div id="chat" class="chat" aria-live="polite"></div>
+<div class="input-wrap">
+<textarea id="input" placeholder="Napisz wiadomość... (Enter = wyślij, Shift+Enter = nowa linia)"></textarea>
+</div>
+</main>
+</div>
+<script>
+(async()=>{
+const chat=document.getElementById('chat'),input=document.getElementById('input');
+function add(msg,who='ai'){const el=document.createElement('div');el.className='message '+(who==='user'?'user':'ai');el.textContent=msg;chat.appendChild(el);chat.scrollTop=chat.scrollHeight;}
+input.addEventListener('keydown',async(e)=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();const text=input.value.trim();if(!text)return;add(text,'user');input.value='';const typing=document.createElement('div');typing.className='message ai';typing.textContent='Postać odpowiada...';chat.appendChild(typing);chat.scrollTop=chat.scrollHeight;try{const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text})});const data=await resp.json();chat.removeChild(typing);if(resp.ok&&data.reply)add(data.reply,'ai');else add('Błąd serwera: '+(data.error||'nieznany'),'ai');}catch(err){if(typing.parentElement)chat.removeChild(typing);add('Błąd: '+err.message,'ai');}}});
+input.focus();
+})();
+</script>
+</body>
+</html>
